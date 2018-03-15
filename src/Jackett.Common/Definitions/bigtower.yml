@@ -1,0 +1,157 @@
+---
+  site: bigtower
+  name: BigTower
+  language: it-it
+  type: private
+  encoding: UTF-8
+  links:
+    - http://bigtower.info/
+
+  caps:
+    categories:
+
+      # MOVIES
+     91: Movies/HD # DSS
+     92: Movies/HD # DSS 3D
+     14: Movies/SD # Screener
+     15: Movies/HD # 
+     16: Movies/HD # BDRip
+     17: Movies/HD # HD 720p
+     18: Movies/HD # HD 1080p
+     19: Movies/HD # HD 3D
+     83: Movies/HD # 4K (Ultra HD)
+     89: Movies/HD # DVD 5
+     90: Movies/HD # DVD 9
+     61: TV # Tv Show
+     78: TV # Serie TV
+     96: TV # Serie Tv 720p
+     97: TV # Serie Tv 1080p
+     98: TV # Serie Tv MP4
+     24: TV/Anime # Cartoni
+     37: TV # MP4
+     66: TV/Anime # Anime
+     71: TV # SUB iTA
+     75: TV # Documentari
+     72: TV # Sport
+
+      # GAMES
+     28: PC/Games # Pc Game
+     63: Console/Xbox # XBOX 360
+     64: Console/Other #PS3
+     33: Console/Other # WII
+     76: Console/Other # PS2
+     81: Console/Xbox # XBOX ONE
+     84: Console/PS4 # PS4
+     
+      # MUSIC
+     35: Audio # MP3
+     67: Audio # FLAC
+     
+      # EBOOK
+     46: Books #  Ebook
+     73: Books #  Fumetti
+     74: Books #  Manga
+     87: Books #  Giornali
+
+
+    modes:
+      search: [q]
+      tv-search: [q, season, ep]
+      movie-search: [q]
+
+  login:
+    path: index.php?page=login
+    method: post
+    inputs:
+      uid: "{{ .Config.username }}"
+      pwd: "{{ .Config.password }}"
+    error:
+      - selector: body[onLoad^="makeAlert('"]
+        message:
+          selector: body[onLoad^="makeAlert('"]
+          attribute: onLoad
+          filters:
+            - name: replace
+              args: ["makeAlert('Error' , '", ""]
+            - name: replace
+              args: ["');", ""]
+    test:
+      path: index.php
+
+  download:
+    before:
+      path: "thanks.php"
+      method: "post"
+      inputs:
+        infohash: "{{ .DownloadUri.Query.id }}"
+        thanks: "1"
+        rndval: "1487013827343"
+    selector: a[href^="download.php?id="]
+
+  search:
+    path: index.php
+    inputs:
+      search: "{{ .Query.Keywords }}"
+      page: "torrents"
+      category: "{{range .Categories}}{{.}};{{end}}"
+      options: "0"
+      active: "0"
+    rows:
+      selector: table > tbody > tr > td > table.lista > tbody > tr:has(a[href^="index.php?page=torrent-details&id="])
+    fields:
+      download:
+        selector: a[href^="index.php?page=downloadcheck&id="]        
+        attribute: href
+      title:
+        selector: a[onmouseover][href^="index.php?page=torrent-details&id="]
+      banner:
+        selector: a[onmouseover][href^="index.php?page=torrent-details&id="]
+        attribute: onmouseover
+        filters:
+          - name: regexp
+            args: "src=(.*?) "
+      category:
+        selector: a[href^="index.php?page=torrents&category="]
+        attribute: href
+        filters:
+          - name: querystring
+            args: category
+      details:
+        selector: a[onmouseover][href^="index.php?page=torrent-details&id="]
+        attribute: href
+      size:
+        selector: td:nth-last-child(4)
+      date:
+        selector: td:nth-last-child(3)
+        filters:
+          - name: append
+            args: " +01:00"
+          - name: dateparse
+            args: "02/01/2006 -07:00"
+      grabs:
+        selector: td:nth-last-child(7)
+        filters:
+          - name: replace
+            args: ["---", "0"]
+      seeders:
+        selector: td:nth-last-child(5)
+      leechers:
+        selector: td:nth-last-child(6)
+      downloadvolumefactor:
+        case:
+          img[alt="Gold 100% Free"]: "0"
+          img[alt="Silver 50% Free"]: "0.5"
+          img[alt="Bronze 25% Free"]: "0.75"
+          "*": "1"
+      uploadvolumefactor:
+        case:
+          img[alt="2x Upload Multiplier"]: "2"
+          img[alt="3x Upload Multiplier"]: "3"
+          img[alt="4x Upload Multiplier"]: "4"
+          img[alt="5x Upload Multiplier"]: "5"
+          img[alt="6x Upload Multiplier"]: "6"
+          img[alt="7x Upload Multiplier"]: "7"
+          img[alt="8x Upload Multiplier"]: "8"
+          img[alt="9x Upload Multiplier"]: "9"
+          img[alt="10x Upload Multiplier"]: "10"
+          "*": "1"
